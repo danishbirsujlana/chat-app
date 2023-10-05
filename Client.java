@@ -1,25 +1,86 @@
 import java.net.*;
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.*;
+import javax.swing.*;
 
-public class Client {
+public class Client extends JFrame {
     Socket client;
     BufferedReader br_in;
     PrintWriter pw_out;
+
+    private JLabel label = new JLabel("Client");
+    private JTextArea messageArea = new JTextArea();
+    private JTextField input = new JTextField();
+    private Font font = new Font("Roboto", Font.PLAIN, 20);
 
     public Client() {
         try {
             System.out.println("Sending request to server");
             client = new Socket("127.0.0.1", 2020);
             System.out.println("Connection established with server");
-
             br_in = new BufferedReader(new InputStreamReader(client.getInputStream()));
             pw_out = new PrintWriter(client.getOutputStream());
 
+            createGUI();
+            handleEvents();
+
             startReading();
-            startWriting();
+            // startWriting();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void handleEvents() {
+        input.addKeyListener(new KeyListener() {
+
+            @Override
+            public void keyTyped(KeyEvent e) {}
+
+            @Override
+            public void keyPressed(KeyEvent e) {}
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == 10) {
+                    String content = input.getText();
+                    messageArea.append("Me: " + content + "\n");
+                    pw_out.println(content);
+                    pw_out.flush();
+                    input.setText("");
+                }
+            }
+
+        });
+    }
+
+    private void createGUI() {
+        // GUI code
+        this.setTitle("Client End");
+        this.setSize(550, 750);
+        this.setLocationRelativeTo(null);
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // inserting components
+        messageArea.setEditable(false);
+        label.setFont(font);
+        messageArea.setFont(font);
+        input.setFont(font);
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+        label.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        // set layout
+        this.setLayout(new BorderLayout());
+
+        // adding components
+        this.add(label, BorderLayout.NORTH);
+        JScrollPane jscroll = new JScrollPane(messageArea);
+        this.add(jscroll, BorderLayout.CENTER);
+        this.add(input, BorderLayout.SOUTH);
+
+        this.setVisible(true);
     }
 
     public void startReading() {
@@ -31,11 +92,14 @@ public class Client {
                     // read message from the client
                     String msg = br_in.readLine();
                     if (msg.equals("exit chat")) {
-                        System.out.println("Server left the chat");
+                        // System.out.println("Server left the chat");
+                        JOptionPane.showMessageDialog(this, "Server left the chat");
+                        input.setEnabled(false);
                         client.close();
                         break;
                     }
-                    System.out.println("Server: " + msg);
+                    // System.out.println("Server: " + msg);
+                    messageArea.append("Server: " + msg + "\n");
                 }
             } catch (Exception e) {
                 System.out.println(e);
